@@ -3,6 +3,7 @@ library(janitor)
 library(fs)
 library(sf)
 library(geofacet)
+library(stringr)
 
 
 data_personas <- dir_ls("data/personas/") %>% 
@@ -61,3 +62,47 @@ test <- data_org_map %>%
 ggplot(test, aes(x = dpt_descripcion, y = n)) +
   geom_col() +
   facet_geo(~ dpt_descripcion, grid = "argentina_grid1")
+
+
+
+
+
+# Mapa distribución por genero/sexo
+
+personas_2019 <- read_csv2("data/personas/personas_2019.csv")
+
+provincias_data <- data_org_map %>% 
+  filter(pais_id == 1) %>% 
+  mutate(name_es =  str_replace_all(dpt_descripcion," ",".")) %>% 
+  mutate(name_es = if_else(name_es=="Capital.Federal","C.A.B.A.",name_es)) %>% 
+  mutate(dpt_descripcion = if_else(dpt_descripcion=="Capital Federal",
+                                   "C.A.B.A.",dpt_descripcion)) %>% 
+  select(name_dpt_descripcion = dpt_descripcion, name_es) %>% 
+  unique()
+
+# modificamos datos de la grilla
+argentina_grid3 <- argentina_grid2 %>% 
+  left_join(provincias_data)
+
+
+personas_2019 %>% 
+  left_join(data_sexo) %>% 
+  left_join(data_disciplina, by = c("disciplina_experticia_id"="disciplina_id")) %>% 
+  left_join(data_org_map, by = c("institucion_trabajo_id"="organizacion_id")) %>% 
+  filter(pais_id == 1) %>% 
+  mutate(label =  str_replace_all(dpt_descripcion," ",".")) %>% 
+  mutate(label = if_else(label=="Capital.Federal","C.A.B.A.",label)) %>% 
+  mutate(sexo_descripcion = if_else(sexo_descripcion=="MASCULINO","M","F")) %>% 
+  group_by(label, dpt_descripcion, sexo_descripcion) %>% 
+  summarise(n = n()) %>%  
+  mutate(pct = n / sum(n)) %>% 
+  ggplot(aes(x = sexo_descripcion, y = pct)) +
+  geom_col(aes(fill = sexo_descripcion)) +
+  guides(y = "none", fill = "none") +
+  labs(x = NULL, y = NULL) +
+  facet_geo(~ label, grid = argentina_grid3, label = "name_dpt_descripcion") +
+  theme(
+    axis.text.x = element_blank()
+  )
+  
+
