@@ -1,6 +1,8 @@
 library(tidyverse)
 library(janitor)
 library(fs)
+library(sf)
+library(geofacet)
 
 
 data_personas <- dir_ls("data/personas/") %>% 
@@ -14,6 +16,11 @@ data_sexo <- read_csv2("data/ref_sexo.csv")
 data_disciplina <- read_csv2("data/ref_disciplina.csv")
 data_conicet <- read_csv2("data/ref_categoria_conicet.csv")
 data_clase_cargo <- read_csv2("data/ref_clase_cargo.csv")
+
+
+data_org_map <- read_csv2("data/organizaciones_localizacion.csv")
+data_provincias_map <- read_sf("https://infra.datos.gob.ar/catalog/modernizacion/dataset/7/distribution/7.12/download/provincias.geojson")
+
 
 # chequeamos números globales
 
@@ -46,3 +53,11 @@ data_personas_sexo %>%
   geom_point()
 
 
+test <- data_org_map %>% 
+  filter(pais_id == 1) %>% 
+  group_by(dpt_descripcion) %>% 
+  count()
+
+ggplot(test, aes(x = dpt_descripcion, y = n)) +
+  geom_col() +
+  facet_geo(~ dpt_descripcion, grid = "argentina_grid1")
