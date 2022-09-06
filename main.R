@@ -100,7 +100,7 @@ personas_2019 %>%
 
 # Disciplinas tecnologias, ingenierias
 
-(personas_tecto_infor <- personas_2019 %>% 
+(personas_tecno_infor <- personas_2019 %>% 
   left_join(data_sexo) %>% 
   left_join(data_disciplina, by = c("disciplina_experticia_id"="disciplina_id")) %>% 
   left_join(data_org_map, by = c("institucion_trabajo_id"="organizacion_id")) %>% 
@@ -203,25 +203,31 @@ persona_disciplina <- personas_2019 %>%
   group_by(area_descripcion, sexo_descripcion) %>% 
   summarise(n = n()) %>% 
   mutate(pct = n / sum(n),
-         pct = if_else(n > 200, pct, NULL))
+         pct = if_else(pct > .6, pct, NULL))
               
-# persona_disciplina_totales <- personas_2019 %>% 
-#   left_join(data_sexo) %>% 
-#   left_join(data_disciplina, by = c("disciplina_experticia_id"="disciplina_id")) %>% 
-#   left_join(data_org_map, by = c("institucion_trabajo_id"="organizacion_id")) %>% 
-#   left_join(data_tipo_personal) %>% 
-#   filter(pais_id == 1) %>% 
-#   filter(gran_area_descripcion == "INGENIERÍAS Y TECNOLOGÍAS" | area_descripcion == "Ciencias de la Computación e Información") %>% 
-#   group_by(area_descripcion) %>% 
-#   summarise(n = n())
+persona_disciplina_totales <- personas_2019 %>%
+  left_join(data_sexo) %>%
+  left_join(data_disciplina, by = c("disciplina_experticia_id"="disciplina_id")) %>%
+  left_join(data_org_map, by = c("institucion_trabajo_id"="organizacion_id")) %>%
+  left_join(data_tipo_personal) %>%
+  filter(pais_id == 1) %>%
+  filter(gran_area_descripcion == "INGENIERÍAS Y TECNOLOGÍAS" | area_descripcion == "Ciencias de la Computación e Información") %>%
+  group_by(area_descripcion) %>%
+  summarise(n = n())
 
-(personas_disciplina <- ggplot(persona_disciplina, aes(y = fct_reorder(area_descripcion, n), x = n, fill = sexo_descripcion)) +
-  geom_col() +
-  geom_text(aes(label = scales::percent(pct, accuracy = 1)), position=position_stack(vjust=0.5)) +
+(personas_disciplina <- ggplot(persona_disciplina, aes(y = fct_reorder(area_descripcion, n), x = n)) +
+  geom_col(aes(fill = sexo_descripcion)) +
+  geom_text(data = persona_disciplina_totales, mapping = aes(label = n),
+            hjust = -.1) +
   scale_y_discrete(labels = function(x) str_wrap(x, width = 50)) +
+  scale_x_continuous(limits = c(0, 2300)) +
   guides(x = "none", fill = "none") +
   labs(x = NULL, y = NULL) +
   theme_minimal() +
   theme(
     #axis.text.y = element_text(hjust = .5)
   ))
+
+
+personas_tecno_infor
+personas_disciplina
