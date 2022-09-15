@@ -113,8 +113,9 @@ personas_2019 %>%
   summarise(n = n()) %>%  
   mutate(pct = n / sum(n)) %>% 
   ggplot(aes(y = pct, x = "A")) +
-  geom_col(aes(fill = sexo_descripcion)) +
+  geom_col(aes(fill = sexo_descripcion), color = "black", alpha = .7) +
   coord_polar("y", start=0) +
+  scale_fill_viridis_d() +
   guides(y = "none", fill = "none") +
   labs(x = NULL, y = NULL) +
   facet_geo(~ label, grid = argentina_grid3, label = "name_dpt_descripcion") +
@@ -123,11 +124,12 @@ personas_2019 %>%
     axis.text.x = element_blank(),
     axis.text.y = element_blank(),
     strip.background = element_rect(fill = "grey50"),
-    strip.text = element_text(color = "white", margin = margin(1.5,0,1.5,0), size = 8),
+    strip.text = element_text(color = "white", margin = margin(1.5,0,1.5,0), size = 10.5, face = "bold"),
     panel.grid = element_blank(),
     panel.border = element_rect(color = "black", fill = NA)
   ))
 
+ggsave("mapa_tecnologias.png", personas_tecno_infor, width = 9, height = 12, dpi = 320)
 
 (crecimiento_tecnos <- data_personas %>% 
   left_join(data_sexo) %>% 
@@ -145,6 +147,7 @@ personas_2019 %>%
   ggplot(aes(y = n, x = anio)) +
   geom_line(aes(color = sexo_descripcion, group = sexo_descripcion)) +
   guides(y = "none", fill = "none") +
+  scale_fill_viridis_d() +
   labs(x = NULL, y = NULL) +
   facet_geo(~ label, grid = argentina_grid3, label = "name_dpt_descripcion") +
   theme_minimal() +
@@ -216,18 +219,55 @@ persona_disciplina_totales <- personas_2019 %>%
   summarise(n = n())
 
 (personas_disciplina <- ggplot(persona_disciplina, aes(y = fct_reorder(area_descripcion, n), x = n)) +
-  geom_col(aes(fill = sexo_descripcion)) +
+  geom_col(aes(fill = sexo_descripcion), color = "black", width = .7) +
   geom_text(data = persona_disciplina_totales, mapping = aes(label = n),
-            hjust = -.1) +
-  scale_y_discrete(labels = function(x) str_wrap(x, width = 50)) +
+            hjust = -.1, size = 5) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 40)) +
   scale_x_continuous(limits = c(0, 2300)) +
   guides(x = "none", fill = "none") +
   labs(x = NULL, y = NULL) +
+  scale_fill_viridis_d() +
   theme_minimal() +
   theme(
-    #axis.text.y = element_text(hjust = .5)
+    axis.text.y = element_text(size = 15)
   ))
 
+ggsave("personas_disciplina.png", personas_disciplina, width = 8, height = 14, dpi = 320)
 
 personas_tecno_infor
 personas_disciplina
+
+
+
+
+
+(personas_total <- personas_2019 %>% 
+    left_join(data_sexo) %>% 
+    left_join(data_disciplina, by = c("disciplina_experticia_id"="disciplina_id")) %>% 
+    left_join(data_org_map, by = c("institucion_trabajo_id"="organizacion_id")) %>% 
+    filter(pais_id == 1) %>% 
+    # filter(gran_area_descripcion == "INGENIERÍAS Y TECNOLOGÍAS" | area_descripcion == "Ciencias de la Computación e Información") %>% 
+    mutate(label =  str_replace_all(dpt_descripcion," ",".")) %>%
+    mutate(label = if_else(label=="Capital.Federal","C.A.B.A.",label)) %>% 
+    mutate(sexo_descripcion = if_else(sexo_descripcion=="MASCULINO","M","F")) %>% 
+    group_by(label, dpt_descripcion, sexo_descripcion) %>% 
+    summarise(n = n()) %>%  
+    mutate(pct = n / sum(n)) %>% 
+    ggplot(aes(y = pct, x = "A")) +
+    geom_col(aes(fill = sexo_descripcion), color = "black", alpha = .7) +
+    coord_polar("y", start=0) +
+    scale_fill_viridis_d() +
+    guides(y = "none", fill = "none") +
+    labs(x = NULL, y = NULL) +
+    facet_geo(~ label, grid = argentina_grid3, label = "name_dpt_descripcion") +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_blank(),
+      axis.text.y = element_blank(),
+      strip.background = element_rect(fill = "grey50"),
+      strip.text = element_text(color = "white", margin = margin(1.5,0,1.5,0), size = 10.5, face = "bold"),
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA)
+    ))
+
+ggsave("mapa_total.png", personas_total, width = 9, height = 12, dpi = 320)
